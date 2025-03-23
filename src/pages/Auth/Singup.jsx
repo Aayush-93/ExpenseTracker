@@ -1,9 +1,18 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router"; // Make sure to use react-router-dom
+import { useNavigate } from "react-router";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  signupStart,
+  signupSuccess,
+  signupFailure,
+} from "../../Redux/slices/authSlice";
 import axios from "axios";
 
 const Signup = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { loading, error, success } = useSelector((state) => state.auth);
+
   const [formData, setFormData] = useState({
     username: "",
     email: "",
@@ -12,9 +21,6 @@ const Signup = () => {
     role: "",
   });
 
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -22,21 +28,25 @@ const Signup = () => {
   const handleSignup = async (e) => {
     e.preventDefault();
 
-    if (Object.values(formData).some((field) => !field.trim())) {
-      setError("Please fill out all fields.");
-      setSuccess("");
+    // Form validation
+    if (
+      Object.values(formData).some((field) => !field.trim()) ||
+      !formData.role
+    ) {
+      dispatch(
+        signupFailure("Please fill out all fields, including selecting a role.")
+      );
       return;
     }
 
+    dispatch(signupStart());
     try {
-      await axios.post(
-        "https://5e3e-103-10-28-234.ngrok-free.app/api/auth/register",
+      const response = await axios.post(
+        "https://4d38-103-10-28-233.ngrok-free.app/api/auth/signup",
         formData,
         { headers: { "Content-Type": "application/json" } }
       );
-
-      setSuccess("Signup successful!");
-      setError("");
+      dispatch(signupSuccess("Signup successful!"));
       setFormData({
         username: "",
         email: "",
@@ -44,17 +54,12 @@ const Signup = () => {
         name: "",
         role: "",
       });
-
-      navigate("/login"); // Navigate to login page on successful signup
+      navigate("/login");
     } catch (err) {
-      setError(err.response?.data?.message || "Signup failed. Try again.");
-      setSuccess("");
-    }
-  };
-
-  const handleKeyDown = (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault(); // Prevent form submission when Enter is pressed
+      // More comprehensive error handling
+      const errorMessage =
+        err.response?.data?.message || "Signup failed. Please try again.";
+      dispatch(signupFailure(errorMessage));
     }
   };
 
@@ -64,7 +69,7 @@ const Signup = () => {
         <h2 className="text-3xl font-extrabold text-blue-700 mb-6">Sign Up</h2>
         {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
         {success && <p className="text-green-500 text-sm mb-3">{success}</p>}
-        <form onSubmit={handleSignup} className="flex flex-col gap-4" onKeyDown={handleKeyDown}>
+        <form onSubmit={handleSignup} className="flex flex-col gap-4">
           <input
             type="text"
             name="username"
@@ -101,8 +106,6 @@ const Signup = () => {
             required
             className="p-3 border-2 border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
           />
-
-          {/* Role */}
           <select
             name="role"
             value={formData.role}
@@ -113,25 +116,22 @@ const Signup = () => {
             <option value="Admin">Admin</option>
             <option value="User">User</option>
           </select>
-
-          {/* Login Link */}
           <p className="mt-5 text-gray-700 text-sm">
             Already have an account?{" "}
             <button
-              type="button" // Ensure the Login link doesn't trigger form submission
+              type="button"
               onClick={() => navigate("/login")}
               className="text-blue-600 font-semibold hover:underline ml-1"
             >
               Log In
             </button>
           </p>
-
-          {/* Submit Button */}
           <button
             type="submit"
+            disabled={loading}
             className="bg-gradient-to-r from-blue-500 to-blue-700 text-white py-3 rounded-lg font-semibold shadow-md hover:shadow-lg hover:bg-gradient-to-l transition-all"
           >
-            Sign Up
+            {loading ? "Signing Up..." : "Sign Up"}
           </button>
         </form>
       </div>

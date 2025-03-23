@@ -1,8 +1,12 @@
 import React, { useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { addExpense } from "../../redux/slices/expenseSlice";
 import ExpenseChart from "./expchart";
 
 const ExpenseTracker = () => {
-  const [expenses, setExpenses] = useState([]);
+  const dispatch = useDispatch();
+  const expenses = useSelector((state) => state.expense.expenses);
+
   const [expense, setExpense] = useState({
     name: "",
     amount: "",
@@ -14,9 +18,16 @@ const ExpenseTracker = () => {
     setExpense({ ...expense, [e.target.name]: e.target.value });
   };
 
-  const addExpense = () => {
+  const addExpenseHandler = () => {
     if (expense.name && expense.amount && expense.date && expense.category) {
-      setExpenses([...expenses, expense]);
+      dispatch(
+        addExpense({
+          ...expense,
+          id: Date.now(),
+          amount: parseFloat(expense.amount),
+        })
+      );
+
       setExpense({
         name: "",
         amount: "",
@@ -26,14 +37,9 @@ const ExpenseTracker = () => {
     }
   };
 
-  const totalAmount = expenses.reduce(
-    (total, exp) => total + parseFloat(exp.amount || 0),
-    0
-  );
-
   return (
     <div className="flex justify-between gap-10 p-8">
-      {/* Left Side: Expense Form and List (Reduced Width) */}
+      {/* Expense Form */}
       <div className="w-full md:w-1.5/4 bg-white shadow-lg rounded-lg p-6">
         <h2 className="text-2xl font-bold mb-4 text-center">Expense Tracker</h2>
         <div className="space-y-3">
@@ -65,13 +71,13 @@ const ExpenseTracker = () => {
             className="border p-2 w-full rounded"
             type="text"
             name="category"
-            placeholder="Category (e.g., Food, Transport)"
+            placeholder="Category"
             value={expense.category}
             onChange={handleChange}
           />
           <button
             className="bg-blue-500 text-white p-2 rounded w-full hover:bg-blue-600"
-            onClick={addExpense}
+            onClick={addExpenseHandler}
           >
             Add Expense
           </button>
@@ -103,9 +109,6 @@ const ExpenseTracker = () => {
                 </tbody>
               </table>
             </div>
-            <div className="text-right font-bold text-lg mt-4">
-              Total: Rs-{totalAmount.toFixed(2)}
-            </div>
           </>
         ) : (
           <div className="text-center text-gray-500 font-semibold text-lg mt-4">
@@ -114,7 +117,7 @@ const ExpenseTracker = () => {
         )}
       </div>
 
-      {/* Right Side: Pie Chart (Increased Width) */}
+      {/* Expense Chart */}
       <div className="w-full md:w-2.5/4 bg-white shadow-lg rounded-lg p-1">
         <ExpenseChart expenses={expenses} />
       </div>

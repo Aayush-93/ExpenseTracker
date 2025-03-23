@@ -1,31 +1,68 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  loginStart,
+  loginSuccess,
+  loginFailure,
+} from "../../Redux/slices/authSlice";
 
 const Login = () => {
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { loading, error } = useSelector((state) => state.auth);
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setError("");
+    dispatch(loginStart());
 
     try {
-      const response = await fetch("https://5e3e-103-10-28-234.ngrok-free.app/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
+      const response = await fetch(
+        "https://4d38-103-10-28-233.ngrok-free.app/api/auth/login",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, password }),
+        }
+      );
 
       const result = await response.json();
       if (!response.ok) throw new Error(result.message || "Login failed");
 
-      localStorage.setItem("token", result.token); //It stores the JWT token after login:
-      alert("Login successful!");
-      navigate("/home");
+      dispatch(loginSuccess(result));
+
+      // Store JWT token in localStorage
+      const token = result.token; // Assuming result contains 'token'
+      localStorage.setItem("token", token);
+      localStorage.setItem("user", JSON.stringify(result.user));
+
+      // Make a request to a protected API endpoint with the token
+      // const protectedResponse = await fetch(
+      //   "endpointhttps://your-backend-url.com/protected-",
+      //   {
+      //     method: "GET", // or "POST", depending on your API
+      //     headers: {
+      //       "Content-Type": "application/json",
+      //       Authorization: `Bearer ${token}`, // Send token here
+      //     },
+      //   }
+      // );
+
+      // const protectedData = await protectedResponse.json();
+      // if (!protectedResponse.ok)
+      //   throw new Error(
+      //     protectedData.message || "Failed to fetch protected data"
+      //   );
+
+      // // Handle the protected data response if needed
+      // console.log(protectedData);
+
+      // Redirect to the home page after successful login and API call
+      setTimeout(() => navigate("/home"), 2000);
     } catch (err) {
-      setError(err.message);
+      dispatch(loginFailure(err.message));
     }
   };
 
@@ -36,11 +73,12 @@ const Login = () => {
         {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
         <form onSubmit={handleLogin} className="flex flex-col gap-4">
           <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="Email"
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            placeholder="Username"
             required
+            autoComplete="username"
             className="p-3 border-2 border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
           />
           <input
@@ -49,16 +87,19 @@ const Login = () => {
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Password"
             required
+            autoComplete="current-password"
             className="p-3 border-2 border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
           />
           <button
             type="submit"
             className="bg-gradient-to-r from-blue-500 to-blue-700 text-white py-3 rounded-lg font-semibold shadow-md hover:shadow-lg hover:bg-gradient-to-l transition-all"
+            disabled={loading}
           >
-            Login
+            {loading ? "Logging in..." : "Login"}
           </button>
         </form>
-        <p className="mt-5 text-gray-700 text-sm">Don't have an account? 
+        <p className="mt-5 text-gray-700 text-sm">
+          Don't have an account?
           <button
             onClick={() => navigate("/signup")}
             className="text-blue-600 font-semibold hover:underline ml-1"

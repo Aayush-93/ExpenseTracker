@@ -8,6 +8,7 @@ import Sidebar from "./Components/sidebar/sidebar";
 import Dashboard from "./pages/Dashboard/Dashboard";
 import Notification from "./pages/Notification";
 import ExpList from "./pages/ExpenseList";
+import Income from "./pages/Income/Income";
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
             <Route path="/home" element={<Dashboard />} />
             <Route path="/notification" element={<Notification />} />
             <Route path="/expenselist" element={<ExpList />} />
+            <Route path="/income" element={<Income />} />
             <Route path="/logout" element={<Login />} />
           </Routes>
         </div>
